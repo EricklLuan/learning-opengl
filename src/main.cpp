@@ -3,6 +3,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <cmath>
+
 static bool wireframe = false;
 
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
@@ -51,36 +53,22 @@ int main(int, char**) {
   std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << "\n";
 
   float verticies[] = {
-     0.5f,  0.5f, 0.0f,
-     0.5f, -0.5f, 0.0f,
     -0.5f, -0.5f, 0.0f,
-    -0.5f,  0.5f, 0.0f
+     0.0f,  0.5f, 0.0f,
+     0.5f, -0.5f, 0.0f
   };
 
-  unsigned int indices[] = {
-    0, 1, 3,
-    1, 2, 3
-  };
-
-  unsigned int VAO;
   unsigned int VBO;
-  unsigned int EBO;
-  
+  unsigned int VAO;
+
   glGenVertexArrays(1, &VAO);
   glGenBuffers(1, &VBO);
-  glGenBuffers(1, &EBO);
 
   glBindVertexArray(VAO);
 
-  // VBO
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO); 
   glBufferData(GL_ARRAY_BUFFER, sizeof(verticies), verticies, GL_STATIC_DRAW);
 
-  // EBO
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-  // VAO
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
   glEnableVertexAttribArray(0);
 
@@ -107,8 +95,9 @@ int main(int, char**) {
   const char* fragmentShaderSrc = 
   "#version 140\n"
   "out vec4 fragColor;\n"
+  "uniform vec4 ourColor;\n"
   "void main(){\n"
-  " fragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+  " fragColor = ourColor;\n"
   "}\0";
 
   unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -118,7 +107,7 @@ int main(int, char**) {
   glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &sucess);
   if (!sucess) {
     glGetShaderInfoLog(fragmentShader, 512, NULL, log);
-    std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED:\n" << log << "\n";
+    std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED:\n" << log << "\n";
   }
 
   unsigned int shaderProgram = glCreateProgram();
@@ -144,9 +133,14 @@ int main(int, char**) {
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
    
+    float time = glfwGetTime();
+    float green = (std::sin(time) / 2.0f) + 0.5f;
+    int fragColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
+
     glUseProgram(shaderProgram);
+    glUniform4f(fragColorLocation, 0.0f, green, 0.0f, 1.0f);
     glBindVertexArray(VAO);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
     glBindVertexArray(0);
 
     glfwPollEvents();
