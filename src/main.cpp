@@ -76,8 +76,8 @@ int main(int, char**) {
   glEnableVertexAttribArray(1);
 
   Shader ourShader = Shader(
-    "shaders/vertex.glsl",
-    "shaders/fragment.glsl",
+    "../shaders/vertex.glsl",
+    "../shaders/fragment.glsl",
     {"position", "color"}
   );
 

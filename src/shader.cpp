@@ -36,7 +36,7 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath, std::vector<std
 
     vertexSRC = vertex.str();
     fragmentSRC = fragment.str();
-  } catch (std::ifstream::failure& e) {
+  } catch (std::ifstream::failure e) {
     std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ\n";
   }
 
