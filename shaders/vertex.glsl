@@ -1,14 +1,13 @@
 #version 140
 
 attribute vec3 position;
-attribute vec3 color;
 attribute vec2 textureCoord;
 
-out vec3 ourColor;
 out vec2 texCoord;
 
+uniform mat4 transform;
+
 void main() {
-  gl_Position = vec4(position, 1.0f);
-  ourColor = color;
+  gl_Position = transform * vec4(position, 1.0f);
   texCoord = textureCoord;
 }

@@ -4,12 +4,16 @@
 #define STB_IMAGE_IMPLEMENTATION 
 #include <stb_image.h>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include <iostream>
+#include <cmath>
 
 #include "shader.hpp"
 
 static bool wireframe = false;
-static float priority = 0.2f;
 
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
@@ -27,21 +31,6 @@ static void process_input(GLFWwindow* window) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         wireframe = false;
     }
-
-    if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS) {
-        priority += 0.01f;
-        if (priority >= 1.0f) {
-            priority = 1.0f;
-        }
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) {
-        priority -= 0.01f;
-        if (priority <= 0.0f) {
-            priority = 0.0f;
-        }
-    }
-
 }
 
 static void glfwError(int id, const char* description) {
@@ -74,10 +63,10 @@ int main(int, char**) {
     std::cout << "GLSL Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << "\n";
 
     float verticies[] = {
-         0.5f,  0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  1.0f, 1.0f,
-         0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,  1.0f, 0.0f,
-        -0.5f, -0.5f, 0.0f,  0.0f, 0.0f, 1.0f,  0.0f, 0.0f,
-        -0.5f,  0.5f, 0.0f,  1.0f, 1.0f, 1.0f,  0.0f, 1.0f,
+         0.5f,  0.5f, 0.0f,    1.0f, 1.0f,
+         0.5f, -0.5f, 0.0f,    1.0f, 0.0f,
+        -0.5f, -0.5f, 0.0f,    0.0f, 0.0f,
+        -0.5f,  0.5f, 0.0f,    0.0f, 1.0f,
     };
 
     int indexs[] = {
@@ -101,20 +90,20 @@ int main(int, char**) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexs), indexs, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)(3*sizeof(float)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(float)));
     glEnableVertexAttribArray(1);
-
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6*sizeof(float)));
-    glEnableVertexAttribArray(2);
 
     Shader ourShader = Shader(
         "shaders/vertex.glsl",
         "shaders/fragment.glsl",
-        {"position", "color", "textureCoord"}
+        {"position", "textureCoord"}
     );
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     int width, height, nrChannels;
 
@@ -124,6 +113,10 @@ int main(int, char**) {
     unsigned int texture0; 
     glGenTextures(1, &texture0);
     glBindTexture(GL_TEXTURE_2D, texture0);
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
 
@@ -134,7 +127,11 @@ int main(int, char**) {
     unsigned int texture1;
     glGenTextures(1, &texture1);
     glBindTexture(GL_TEXTURE_2D, texture1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
 
     stbi_image_free(data);
@@ -149,15 +146,34 @@ int main(int, char**) {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
    
-        ourShader.use();
-        ourShader.setFloat("priority", priority);
-        
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture0);
 
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, texture1);
         
+        ourShader.use();
+
+        glm::mat4 trans = glm::mat4(1.0f);
+        trans = glm::translate(trans, glm::vec3(0.5, -0.5, 0.0f));
+        trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+
+        glUniformMatrix4fv(glGetUniformLocation(ourShader.getID(), "transform"),1,GL_FALSE, glm::value_ptr(trans));
+        
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+        glUseProgram(0);
+
+        ourShader.use();
+
+        trans = glm::mat4(1.0f);
+        trans = glm::translate(trans, glm::vec3(-0.5, 0.5, 0.0f));
+        trans = glm::rotate(trans, std::sin((float)glfwGetTime()), glm::vec3(0.0f, 0.0f, 1.0f));
+
+        glUniformMatrix4fv(glGetUniformLocation(ourShader.getID(), "transform"), 1, GL_FALSE, glm::value_ptr(trans));
+
         glBindVertexArray(VAO);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
