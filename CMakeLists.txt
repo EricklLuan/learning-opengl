@@ -4,8 +4,7 @@ project(learning-opengl VERSION 0.1.0)
 find_package(glad CONFIG REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 
-file(GLOB SOURCES "src/*.cpp")
-add_executable(learning-opengl ${SOURCES})
+add_executable(learning-opengl "src/main.cpp" "src/shader.cpp" "src/texture.cpp")
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
