@@ -25,7 +25,6 @@ void Camera::handleMouse(float xOffset, float yOffset)
 
 void Camera::handleScroll(float yOffset) 
 {
-	std::cout << zoom << "\n";
 	zoom -= (float)yOffset;
 	if (zoom < 1.0f) zoom = 1.0f;
 	if (zoom > 45.0f) zoom = 45.0f;
