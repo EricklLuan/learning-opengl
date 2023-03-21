@@ -14,7 +14,7 @@ private:
   void handleError(unsigned int shaderID, const char* error_text) const;
 
 public:
-  Shader(const char* vertexPath, const char* fragmentPath, std::vector<std::string> locations_vars_names={});
+  Shader(const char* vertexPath, const char* fragmentPath);
 
   void use();
 

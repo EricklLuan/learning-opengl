@@ -17,7 +17,7 @@ void Shader::handleError(unsigned int shaderID, const char* error_text) const {
   }
 }
 
-Shader::Shader(const char* vertexPath, const char* fragmentPath, std::vector<std::string> locations_vars_names) {
+Shader::Shader(const char* vertexPath, const char* fragmentPath) {
   std::string vertexSRC;
   std::string fragmentSRC;
 
@@ -59,10 +59,6 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath, std::vector<std
   glAttachShader(ID, vertexShader);
   glAttachShader(ID, fragmentShader);
 
-  for (int i = 0; i < locations_vars_names.size(); i++) {
-    glBindAttribLocation(ID, i, locations_vars_names[i].c_str());
-  }
-  
   glLinkProgram(ID);
 
   int success;
