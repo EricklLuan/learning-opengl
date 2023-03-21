@@ -185,9 +185,10 @@ int main(int, char**) {
         cubeShader.use();
         glBindVertexArray(VAO);
 
-        cubeShader.setVec3("cubeColor", 1.0f, 0.5f, 0.31f);
-        cubeShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-        cubeShader.setVec3("lightPos", 1.2f, 1.0f, 2.0f);
+        cubeShader.setVec3("cubeColor", { 1.0f, 0.5f, 0.31f });
+        cubeShader.setVec3("lightColor", { 1.0f, 1.0f, 1.0f });
+        cubeShader.setVec3("lightPos", { 1.2f, 1.0f, 2.0f });
+        cubeShader.setVec3("viewPos", camera.position);
 
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
@@ -198,6 +199,7 @@ int main(int, char**) {
         glUniformMatrix4fv(glGetUniformLocation(cubeShader.getID(), "model"), 1, GL_FALSE, glm::value_ptr(model));
         glUniformMatrix4fv(glGetUniformLocation(cubeShader.getID(), "view"), 1, GL_FALSE, glm::value_ptr(camera.getViewMatrix()));
         glUniformMatrix4fv(glGetUniformLocation(cubeShader.getID(), "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(glGetUniformLocation(cubeShader.getID(), "inverseModel"), 1, GL_FALSE, glm::value_ptr(glm::inverse(model)));
 
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
@@ -220,6 +222,7 @@ int main(int, char**) {
 
         glfwPollEvents();
         glfwSwapBuffers(window);
+
     }
   
     glfwTerminate();
