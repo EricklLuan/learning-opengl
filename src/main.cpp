@@ -176,9 +176,21 @@ int main(int, char**) {
 
     Texture container = Texture("assets/container2.png", GL_RGBA);
     Texture containerSpecular = Texture("assets/container2_specular.png", GL_RGBA);
-    Texture matrix = Texture("assets/matrix.jpg", GL_RGB);
 
     glm::vec3 lightPos = {1.5f, 1.0f, 1.0f};
+
+    glm::vec3 cubePositions[] = {
+        glm::vec3(0.0f,  0.0f,  0.0f),
+        glm::vec3(2.0f,  5.0f, -15.0f),
+        glm::vec3(-1.5f, -2.2f, -2.5f),
+        glm::vec3(-3.8f, -2.0f, -12.3f),
+        glm::vec3(2.4f, -0.4f, -3.5f),
+        glm::vec3(-1.7f,  3.0f, -7.5f),
+        glm::vec3(1.3f, -2.0f, -2.5f),
+        glm::vec3(1.5f,  2.0f, -2.5f),
+        glm::vec3(1.5f,  0.2f, -1.5f),
+        glm::vec3(-1.3f,  1.0f, -1.5f)
+    };
 
     while (!glfwWindowShouldClose(window)) {
         process_input(window);
@@ -193,34 +205,45 @@ int main(int, char**) {
         cubeShader.use();
         glBindVertexArray(VAO);
 
+        glm::mat4 model = glm::mat4(1.0f);
+        glm::mat4 projection = glm::mat4(1.0f);
+        projection = glm::perspective(glm::radians(camera.zoom), 800.0f / 600.0f, 0.1f, 100.0f);
+
         container.use(0);
         containerSpecular.use(1);
-        matrix.use(2);
-
+        
         cubeShader.setInt("diffuseSampler", 0);
         cubeShader.setInt("specularSampler", 1);
-        cubeShader.setInt("matrix", 2);
         cubeShader.setFloat("material.shininess", 64.0f);
 
         cubeShader.setVec3("light.diffuse", { 0.5f, 0.5f, 0.5f });
         cubeShader.setVec3("light.ambient", { 0.2f, 0.2f, 0.2f });
         cubeShader.setVec3("light.specular", { 1.0f, 1.0f, 1.0f });
 
-        cubeShader.setVec3("light.position", lightPos);
+        cubeShader.setFloat("light.constant", 1.0f);
+        cubeShader.setFloat("light.linear", 0.09f);
+        cubeShader.setFloat("light.quadratic", 0.032f);
+        cubeShader.setFloat("light.cutOff", glm::cos(glm::radians(12.5f)));
+        cubeShader.setFloat("light.outerCutOff", glm::cos(glm::radians(17.5f)));
+
+        cubeShader.setVec3("light.position", camera.position);
+        cubeShader.setVec3("light.direction", camera.FRONT);
         cubeShader.setVec3("viewPos", camera.position);
+        
+        for (int i = 0; i < 10; i++) {
 
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+            model = glm::mat4(1.0f);
+            model = glm::translate(model, cubePositions[i]);
+            model = glm::rotate(model, glm::radians(20.0f * i), { 1.0f, 0.3f, 0.5f });
             
-        glm::mat4 projection = glm::mat4(1.0f);
-        projection = glm::perspective(glm::radians(camera.zoom), 800.0f / 600.0f, 0.1f, 100.0f);
+            glUniformMatrix4fv(glGetUniformLocation(cubeShader.getID(), "model"), 1, GL_FALSE, glm::value_ptr(model));
+            glUniformMatrix4fv(glGetUniformLocation(cubeShader.getID(), "view"), 1, GL_FALSE, glm::value_ptr(camera.getViewMatrix()));
+            glUniformMatrix4fv(glGetUniformLocation(cubeShader.getID(), "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+            glUniformMatrix4fv(glGetUniformLocation(cubeShader.getID(), "inverseModel"), 1, GL_FALSE, glm::value_ptr(glm::inverse(model)));
 
-        glUniformMatrix4fv(glGetUniformLocation(cubeShader.getID(), "model"), 1, GL_FALSE, glm::value_ptr(model));
-        glUniformMatrix4fv(glGetUniformLocation(cubeShader.getID(), "view"), 1, GL_FALSE, glm::value_ptr(camera.getViewMatrix()));
-        glUniformMatrix4fv(glGetUniformLocation(cubeShader.getID(), "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-        glUniformMatrix4fv(glGetUniformLocation(cubeShader.getID(), "inverseModel"), 1, GL_FALSE, glm::value_ptr(glm::inverse(model)));
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
 
-        glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
         glUseProgram(0);
 
@@ -228,7 +251,7 @@ int main(int, char**) {
         glBindVertexArray(lightVAO);
 
         model = glm::mat4(1.0f);
-        model = glm::translate(model, lightPos);
+        model = glm::translate(model, { 1.2f, 1.0f, 2.0f });
         model = glm::scale(model, glm::vec3(0.2f));
 
         glUniformMatrix4fv(glGetUniformLocation(lightShader.getID(), "model"), 1, GL_FALSE, glm::value_ptr(model));
