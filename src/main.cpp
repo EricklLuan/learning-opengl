@@ -1,9 +1,12 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <assimp/Importer.hpp>
+
 #include <iostream>
 #include <cmath>
 
+#include "mesh.hpp"
 #include "shader.hpp"
 #include "texture.hpp"
 #include "camera.hpp"
@@ -219,8 +222,8 @@ int main(int, char**) {
         container.use(0);
         containerSpecular.use(1);
         
-        cubeShader.setInt("diffuseSampler", 0);
-        cubeShader.setInt("specularSampler", 1);
+        cubeShader.setInt("texture_diffuse1", 0);
+        cubeShader.setInt("texture_specular1", 1);
         cubeShader.setFloat("material.shininess", 64.0f);
 
         cubeShader.setVec3("light.diffuse", { 1.0f, 1.0f, 1.0f });
@@ -229,7 +232,7 @@ int main(int, char**) {
 
         cubeShader.setFloat("light.constant", 1.0f);
         cubeShader.setFloat("light.linear", 0.09f);
-        cubeShader.setFloat("light.quadratic", 0.032f);
+        cubeShader.setFloat("light.quadratic", 0.032f); 
         cubeShader.setFloat("light.cutOff", glm::cos(glm::radians(12.5f)));
         cubeShader.setFloat("light.outerCutOff", glm::cos(glm::radians(15.5f)));
 
