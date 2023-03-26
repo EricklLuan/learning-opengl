@@ -20,6 +20,7 @@ struct vertex {
 struct texture {
 	unsigned int ID;
 	std::string type;
+	std::string path;
 };
 
 class Mesh {
@@ -34,7 +35,7 @@ public:
 	std::vector<unsigned int> indices;
 	std::vector<texture>      textures;
 public:
-	Mesh(std::vector<vertex>, std::vector<unsigned int>, std::vector<texture>);
+	Mesh(std::vector<vertex> vertices, std::vector<unsigned int> indices, std::vector<texture> textures);
 	
 	void draw(Shader &shader);
 };
