@@ -82,7 +82,6 @@ int main(int, char**) {
         return -1;
     }
 
-    glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, 800, 600);
 
     glfwSetFramebufferSizeCallback(window, &framebuffer_size_callback);
@@ -93,66 +92,195 @@ int main(int, char**) {
     std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << "\n";
     std::cout << "GLSL Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << "\n";
 
+    float cubeVertices[] = {
+        // positions          // texture Coords
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+         0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+    };
+
+    float planeVertices[] = {
+        // positions          // texture Coords (note we set these higher than 1 (together with GL_REPEAT as texture wrapping mode). this will cause the floor texture to repeat)
+         5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
+        -5.0f, -0.5f,  5.0f,  0.0f, 0.0f,
+        -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+
+         5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
+        -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+         5.0f, -0.5f, -5.0f,  2.0f, 2.0f
+    };
+
     stbi_set_flip_vertically_on_load(true);
 
-    Shader backpackShader(
-        "shaders/model_loadvs.glsl",
-        "shaders/model_loadfs.glsl"
+    unsigned int cVAO, cVBO;
+
+    glGenVertexArrays(1, &cVAO);
+    glGenBuffers(1, &cVBO);
+    
+    glBindVertexArray(cVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, cVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+
+    glBindVertexArray(0);
+
+    unsigned int pVAO, pVBO;
+
+    glGenVertexArrays(1, &pVAO);
+    glGenBuffers(1, &pVBO);
+
+    glBindVertexArray(pVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, pVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+
+    glBindVertexArray(0);
+
+    Shader stencil(
+        "shaders/stencil/shaderSingleColorVS.glsl",
+        "shaders/stencil/shaderSingleColorFS.glsl"
     );
 
-    Model backpack = Model("models/backpack/backpack.obj");
+    Shader normal(
+        "shaders/stencil/normalVS.glsl",
+        "shaders/stencil/normalFS.glsl"
+    );
 
-    // fazer o shader para illuminação basico ambient e difuse
+    Texture marble = Texture("assets/marble.jpg", GL_RGB);
+    Texture metal = Texture("assets/metal.jpg", GL_RGB);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+
     while (!glfwWindowShouldClose(window)) {
         process_input(window);
 
         float current_frame = (float)glfwGetTime();
         delta = current_frame - last_frame;
         last_frame = current_frame;
+        
+        glEnable(GL_STENCIL_TEST);
+        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
         glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         
-        backpackShader.use();
-
         glm::mat4 model;
         glm::mat4 projection;
         glm::mat4 view;
-
         projection = glm::perspective(glm::radians(camera.zoom), 800.0f / 600.0f, 0.1f, 100.0f);
         view       = camera.getViewMatrix();
-        model      = glm::mat4(1.0f);
 
-        model = glm::translate(model, { 0.0f, 0.0f, 0.0f });
-        model = glm::scale(model, { 1.0f, 1.0f, 1.0f });
+        normal.use();
+        normal.setMat4("view", view);
+        normal.setMat4("projection", projection);
 
-        backpackShader.setMat4("model", model);
-        backpackShader.setMat4("projection", projection);
-        backpackShader.setMat4("view", view);
-        backpackShader.setMat4("inverseModel", glm::inverse(model));
-
-        backpackShader.setVec3("viewPos", camera.position);
-        backpackShader.setVec3("light.ambient", { 0.2f, 0.2f, 0.2f });
-        backpackShader.setVec3("light.diffuse", { 0.5f, 0.5f, 0.5f });
-        backpackShader.setVec3("light.specular", { 1.0f, 1.0f, 1.0f });
-        backpackShader.setVec3("light.position", { std::cos(glfwGetTime()) * 5.0f, 1.0f, std::sin(glfwGetTime()) * 5.0f });
-
-        backpack.draw(backpackShader);
-
-        projection = glm::perspective(glm::radians(camera.zoom), 800.0f / 600.0f, 0.1f, 100.0f);
-        view = camera.getViewMatrix();
+        glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        glStencilMask(0xFF);
+        marble.use(0);
         model = glm::mat4(1.0f);
+        model = glm::translate(model, { -1.0f, 0.01f, -1.0f });
 
-        model = glm::translate(model, { std::cos(glfwGetTime()) * 5.0f, 1.0f, std::sin(glfwGetTime()) * 5.0f });
-        model = glm::scale(model, { 0.2f, 0.2f, 0.2f });
+        normal.setInt("texture0", 0);
+        normal.setMat4("model", model);
+        glBindVertexArray(cVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
-        backpackShader.setMat4("model", model);
-        backpackShader.setMat4("projection", projection);
-        backpackShader.setMat4("view", view);
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, { 2.0f, 0.01f, 0.0f });
 
-        backpackShader.setVec3("light.ambient", { 0.2f, 0.2f, 0.2f });
+        normal.setMat4("model", model);
+        glBindVertexArray(cVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        
+        glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        glStencilMask(0x00);
+        metal.use(0);
 
-        backpack.draw(backpackShader);
+        model = glm::mat4(1.0f);
+        normal.setInt("texture0", 0);
+
+        normal.setMat4("model", model);
+        glBindVertexArray(pVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        
+        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+        glStencilMask(0x00);
+        glDisable(GL_DEPTH_TEST);
+        stencil.use();
+
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, { -1.0f, 0.01f, -1.0f });
+        model = glm::scale(model, glm::vec3(1.1f));
+
+        stencil.setMat4("model", model);
+        stencil.setMat4("view", view);
+        stencil.setMat4("projection", projection);
+
+        glBindVertexArray(cVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, { 2.0f, 0.01f, 0.0f });
+        model = glm::scale(model, glm::vec3(1.1f));
+
+        stencil.setMat4("model", model);
+
+        glBindVertexArray(cVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glStencilMask(0xFF);
+        glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        glEnable(GL_DEPTH_TEST);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
