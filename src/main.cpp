@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <iostream>
 #include <cmath>
+#include <map>
 
 #include <stb_image.h>
 
@@ -148,6 +149,16 @@ int main(int, char**) {
          5.0f, -0.5f, -5.0f,  2.0f, 2.0f
     };
 
+    float grassVertices[] = {
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    };
+
     stbi_set_flip_vertically_on_load(true);
 
     unsigned int cVAO, cVBO;
@@ -186,21 +197,47 @@ int main(int, char**) {
 
     glBindVertexArray(0);
 
-    Shader stencil(
-        "shaders/stencil/shaderSingleColorVS.glsl",
-        "shaders/stencil/shaderSingleColorFS.glsl"
-    );
+    unsigned int  gVAO, gVBO;
+
+    glGenVertexArrays(1, &gVAO);
+    glGenBuffers(1, &gVBO);
+
+    glBindVertexArray(gVAO);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, gVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(grassVertices), grassVertices, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+
+    glBindVertexArray(0);
 
     Shader normal(
-        "shaders/stencil/normalVS.glsl",
-        "shaders/stencil/normalFS.glsl"
+        "shaders/blending/blendingVS.glsl",
+        "shaders/blending/blendingFS.glsl"
     );
 
-    Texture marble = Texture("assets/marble.jpg", GL_RGB);
-    Texture metal = Texture("assets/metal.jpg", GL_RGB);
+    Texture grass = Texture("assets/blending/grass.png", GL_RGBA, GL_CLAMP_TO_EDGE);
+    Texture win = Texture("assets/blending/window.png", GL_RGBA, GL_RGBA);
+    Texture marble = Texture("assets/marble.jpg", GL_RGB, GL_REPEAT);
+    Texture metal = Texture("assets/metal.jpg", GL_RGB, GL_REPEAT);
+    
+    std::vector<glm::vec3> windows = {
+        {-1.5f,  0.0f, -0.48f},
+        {1.5f,  0.0f,  0.51f},
+        {0.0f,  0.0f,  0.7f},
+        {-0.3f,  0.0f, -2.3f},
+        {0.5f,  0.0f, -0.6f}
+    };
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
     while (!glfwWindowShouldClose(window)) {
         process_input(window);
@@ -209,11 +246,14 @@ int main(int, char**) {
         delta = current_frame - last_frame;
         last_frame = current_frame;
         
-        glEnable(GL_STENCIL_TEST);
-        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+        std::map<float, glm::vec3> sorted;
+        for (unsigned int i = 0; i < windows.size(); i++) {
+            float distance = glm::length(camera.position - windows[i]);
+            sorted[distance] = windows[i];
+        }
 
         glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         glm::mat4 model;
         glm::mat4 projection;
@@ -221,67 +261,55 @@ int main(int, char**) {
         projection = glm::perspective(glm::radians(camera.zoom), 800.0f / 600.0f, 0.1f, 100.0f);
         view       = camera.getViewMatrix();
 
-        normal.use();
-        normal.setMat4("view", view);
-        normal.setMat4("projection", projection);
+        { // Cubes
+            normal.use();
+            normal.setMat4("view", view);
+            normal.setMat4("projection", projection);
 
-        glStencilFunc(GL_ALWAYS, 1, 0xFF);
-        glStencilMask(0xFF);
-        marble.use(0);
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, { -1.0f, 0.01f, -1.0f });
+            marble.use(0);
+            model = glm::mat4(1.0f);
+            model = glm::translate(model, { -1.0f, 0.01f, -1.0f });
 
-        normal.setInt("texture0", 0);
-        normal.setMat4("model", model);
-        glBindVertexArray(cVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+            normal.setInt("texture0", 0);
+            normal.setMat4("model", model);
+            glBindVertexArray(cVAO);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
 
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, { 2.0f, 0.01f, 0.0f });
+            model = glm::mat4(1.0f);
+            model = glm::translate(model, { 2.0f, 0.01f, 0.0f });
 
-        normal.setMat4("model", model);
-        glBindVertexArray(cVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+            normal.setMat4("model", model);
+            glBindVertexArray(cVAO);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
         
-        glStencilFunc(GL_ALWAYS, 1, 0xFF);
-        glStencilMask(0x00);
-        metal.use(0);
+        { // Planes
+            metal.use(0);
+            normal.setInt("texture0", 0);
 
-        model = glm::mat4(1.0f);
-        normal.setInt("texture0", 0);
+            model = glm::mat4(1.0f);
+            normal.setMat4("model", model);
 
-        normal.setMat4("model", model);
-        glBindVertexArray(pVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+            glBindVertexArray(pVAO);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
+
+        {
+            glBindVertexArray(gVAO);
+            win.use(0);
+            normal.setInt("texture0", 0);
+
+            for (std::map<float, glm::vec3>::reverse_iterator it = sorted.rbegin(); it != sorted.rend(); ++it) {
+
+                model = glm::mat4(1.0f);
+                model = glm::translate(model, it->second);
+                normal.setMat4("model", model);
+
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+            }
+
+        }
         
-        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-        glStencilMask(0x00);
-        glDisable(GL_DEPTH_TEST);
-        stencil.use();
-
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, { -1.0f, 0.01f, -1.0f });
-        model = glm::scale(model, glm::vec3(1.1f));
-
-        stencil.setMat4("model", model);
-        stencil.setMat4("view", view);
-        stencil.setMat4("projection", projection);
-
-        glBindVertexArray(cVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, { 2.0f, 0.01f, 0.0f });
-        model = glm::scale(model, glm::vec3(1.1f));
-
-        stencil.setMat4("model", model);
-
-        glBindVertexArray(cVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        glStencilMask(0xFF);
-        glStencilFunc(GL_ALWAYS, 1, 0xFF);
-        glEnable(GL_DEPTH_TEST);
-
         glfwSwapBuffers(window);
         glfwPollEvents();
 
