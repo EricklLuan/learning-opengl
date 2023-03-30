@@ -92,6 +92,8 @@ int main(int, char**) {
 
     std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << "\n";
     std::cout << "GLSL Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << "\n";
+    
+    
 
     float cubeVertices[] = {
         // Back face
@@ -159,10 +161,31 @@ int main(int, char**) {
         -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
     };
 
+    float quadVertices[] = {
+        // positions   // texCoords
+        -1.0f,  1.0f,  0.0f, 1.0f,
+        -1.0f, -1.0f,  0.0f, 0.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+
+        -1.0f,  1.0f,  0.0f, 1.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+         1.0f,  1.0f,  1.0f, 1.0f
+    };
+
+    float mirrorVertices[] = {
+        // positions   // texCoords
+        -0.5f,  1.0f,  0.0f, 1.0f,
+        -0.5f,  0.5f,  0.0f, 0.0f,
+         0.5f,  0.5f,  1.0f, 0.0f,
+
+        -0.5f,  1.0f,  0.0f, 1.0f,
+         0.5f,  1.0f,  1.0f, 1.0f,
+         0.5f,  0.5f,  1.0f, 0.0f
+    };
+
     stbi_set_flip_vertically_on_load(true);
 
     unsigned int cVAO, cVBO;
-
     glGenVertexArrays(1, &cVAO);
     glGenBuffers(1, &cVBO);
     
@@ -180,7 +203,6 @@ int main(int, char**) {
     glBindVertexArray(0);
 
     unsigned int pVAO, pVBO;
-
     glGenVertexArrays(1, &pVAO);
     glGenBuffers(1, &pVBO);
 
@@ -197,21 +219,37 @@ int main(int, char**) {
 
     glBindVertexArray(0);
 
-    unsigned int  gVAO, gVBO;
+    unsigned int sVAO, sVBO;
+    glGenVertexArrays(1, &sVAO);
+    glGenBuffers(1, &sVBO);
 
-    glGenVertexArrays(1, &gVAO);
-    glGenBuffers(1, &gVBO);
+    glBindVertexArray(sVAO);
 
-    glBindVertexArray(gVAO);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, gVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(grassVertices), grassVertices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, sVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
 
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+    glBindVertexArray(0);
+
+    unsigned int mVAO, mVBO;
+    glGenVertexArrays(1, &mVAO);
+    glGenBuffers(1, &mVBO);
+
+    glBindVertexArray(mVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, mVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(mirrorVertices), mirrorVertices, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
     glBindVertexArray(0);
 
@@ -220,25 +258,41 @@ int main(int, char**) {
         "shaders/blending/blendingFS.glsl"
     );
 
-    Texture grass = Texture("assets/blending/grass.png", GL_RGBA, GL_CLAMP_TO_EDGE);
-    Texture win = Texture("assets/blending/window.png", GL_RGBA, GL_RGBA);
-    Texture marble = Texture("assets/marble.jpg", GL_RGB, GL_REPEAT);
+    Shader screen(
+        "shaders/framebuffer/framebufferVS.glsl",
+        "shaders/framebuffer/framebufferFS.glsl"
+    );
+
+    Texture container = Texture("assets/container.jpg", GL_RGB, GL_REPEAT);
     Texture metal = Texture("assets/metal.jpg", GL_RGB, GL_REPEAT);
     
-    std::vector<glm::vec3> windows = {
-        {-1.5f,  0.0f, -0.48f},
-        {1.5f,  0.0f,  0.51f},
-        {0.0f,  0.0f,  0.7f},
-        {-0.3f,  0.0f, -2.3f},
-        {0.5f,  0.0f, -0.6f}
-    };
+    unsigned int FBO;
+    glGenFramebuffers(1, &FBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    unsigned int color;
+    glGenTextures(1, &color);
+    glBindTexture(GL_TEXTURE_2D, color);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 600, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color, 0);
+
+    unsigned int RBO;
+    glGenRenderbuffers(1, &RBO);
+    glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 800, 600);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cout << "ERROR::FRAMEBUFFER: Framebuffer is not complete!\n";
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
     while (!glfwWindowShouldClose(window)) {
         process_input(window);
 
@@ -246,30 +300,23 @@ int main(int, char**) {
         delta = current_frame - last_frame;
         last_frame = current_frame;
         
-        std::map<float, glm::vec3> sorted;
-        for (unsigned int i = 0; i < windows.size(); i++) {
-            float distance = glm::length(camera.position - windows[i]);
-            sorted[distance] = windows[i];
-        }
-
-        glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+        glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
+        glEnable(GL_DEPTH_TEST);
+
         glm::mat4 model;
         glm::mat4 projection;
         glm::mat4 view;
         projection = glm::perspective(glm::radians(camera.zoom), 800.0f / 600.0f, 0.1f, 100.0f);
         view       = camera.getViewMatrix();
   
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_FRONT);
-        glFrontFace(GL_CW);
         { // Cubes
             normal.use();
             normal.setMat4("view", view);
             normal.setMat4("projection", projection);
 
-            marble.use(0);
+            container.use(0);
             model = glm::mat4(1.0f);
             model = glm::translate(model, { -1.0f, 0.01f, -1.0f });
 
@@ -285,7 +332,6 @@ int main(int, char**) {
             glBindVertexArray(cVAO);
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
-        glDisable(GL_CULL_FACE);
         
         { // Planes
             metal.use(0);
@@ -298,27 +344,33 @@ int main(int, char**) {
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
 
-        {
-            glBindVertexArray(gVAO);
-            win.use(0);
-            normal.setInt("texture0", 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
 
-            for (std::map<float, glm::vec3>::reverse_iterator it = sorted.rbegin(); it != sorted.rend(); ++it) {
+        screen.use();
 
-                model = glm::mat4(1.0f);
-                model = glm::translate(model, it->second);
-                normal.setMat4("model", model);
+        glBindVertexArray(sVAO);
+        glDisable(GL_DEPTH_TEST);
+        glBindTexture(GL_TEXTURE_2D, color);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
 
-                glDrawArrays(GL_TRIANGLES, 0, 6);
-            }
+        glBindVertexArray(mVAO);
+        glDisable(GL_DEPTH_TEST);
+        glBindTexture(GL_TEXTURE_2D, color);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        }
-        
         glfwSwapBuffers(window);
         glfwPollEvents();
 
     }
-  
+
+    glDeleteFramebuffers(1, &FBO);
+    glDeleteBuffers(1, &cVBO);
+    glDeleteBuffers(1, &pVBO);
+    glDeleteVertexArrays(1, &cVAO);
+    glDeleteVertexArrays(1, &pVAO);
+    
     glfwTerminate();
 }
   
