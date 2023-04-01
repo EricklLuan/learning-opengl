@@ -91,53 +91,95 @@ int main(int, char**) {
     glfwSetScrollCallback(window, scroll_callback);
 
     std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << "\n";
-    std::cout << "GLSL Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << "\n";
-    
-    
+    std::cout << "GLSL Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << "\n";  
 
     float cubeVertices[] = {
-        // Back face
-        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // Bottom-left
-         0.5f, -0.5f, -0.5f,  1.0f, 0.0f, // bottom-right         
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, // top-left
-        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // bottom-left
-        // Front face
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
-         0.5f,  0.5f,  0.5f,  1.0f, 1.0f, // top-right
-         0.5f, -0.5f,  0.5f,  1.0f, 0.0f, // bottom-right
-         0.5f,  0.5f,  0.5f,  1.0f, 1.0f, // top-right
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-left
-        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f, // top-left
-        // Left face
-        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-right
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-left
-        -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-left
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-left
-        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-right
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-right
-        // Right face
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-left
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right         
-         0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-right
-         0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // bottom-right
-         0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-left     
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // top-left
-         // Bottom face
-         -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // top-right
-          0.5f, -0.5f,  0.5f,  1.0f, 0.0f, // bottom-left
-          0.5f, -0.5f, -0.5f,  1.0f, 1.0f, // top-left
-          0.5f, -0.5f,  0.5f,  1.0f, 0.0f, // bottom-left
-         -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, // top-right
-         -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, // bottom-right
-         // Top face
-         -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, // top-left
-          0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // top-right     
-          0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // bottom-right
-          0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // bottom-right
-         -0.5f,  0.5f,  0.5f,  0.0f, 0.0f, // bottom-left        
-         -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, // top-left
+        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+
+        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+
+        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+
+         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+
+        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+
+        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+         0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
+    };
+
+    float skyboxVertices[] = {
+        // positions          
+        -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+        -1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f
     };
 
     float planeVertices[] = {
@@ -151,16 +193,6 @@ int main(int, char**) {
          5.0f, -0.5f, -5.0f,  2.0f, 2.0f
     };
 
-    float grassVertices[] = {
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-
-         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-    };
-
     float quadVertices[] = {
         // positions   // texCoords
         -1.0f,  1.0f,  0.0f, 1.0f,
@@ -170,17 +202,6 @@ int main(int, char**) {
         -1.0f,  1.0f,  0.0f, 1.0f,
          1.0f, -1.0f,  1.0f, 0.0f,
          1.0f,  1.0f,  1.0f, 1.0f
-    };
-
-    float mirrorVertices[] = {
-        // positions   // texCoords
-        -0.5f,  1.0f,  0.0f, 1.0f,
-        -0.5f,  0.5f,  0.0f, 0.0f,
-         0.5f,  0.5f,  1.0f, 0.0f,
-
-        -0.5f,  1.0f,  0.0f, 1.0f,
-         0.5f,  1.0f,  1.0f, 1.0f,
-         0.5f,  0.5f,  1.0f, 0.0f
     };
 
     stbi_set_flip_vertically_on_load(true);
@@ -195,10 +216,10 @@ int main(int, char**) {
     glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
 
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
 
     glBindVertexArray(0);
 
@@ -236,20 +257,17 @@ int main(int, char**) {
 
     glBindVertexArray(0);
 
-    unsigned int mVAO, mVBO;
-    glGenVertexArrays(1, &mVAO);
-    glGenBuffers(1, &mVBO);
+    unsigned int bVAO, bVBO;
+    glGenVertexArrays(1, &bVAO);
+    glGenBuffers(1, &bVBO);
 
-    glBindVertexArray(mVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, mVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(mirrorVertices), mirrorVertices, GL_STATIC_DRAW);
+    glBindVertexArray(bVAO);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, bVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
     glBindVertexArray(0);
 
@@ -263,8 +281,23 @@ int main(int, char**) {
         "shaders/framebuffer/framebufferFS.glsl"
     );
 
+    Shader skybox(
+        "shaders/skybox/skyboxVS.glsl",
+        "shaders/skybox/skyboxFS.glsl"
+    );
+
+    std::vector<const char*> paths = {
+        "assets/skybox/skyrender0001.bmp",
+        "assets/skybox/skyrender0003.bmp",
+        "assets/skybox/skyrender0005.bmp",
+        "assets/skybox/skyrender0006.bmp",
+        "assets/skybox/skyrender0004.bmp",
+        "assets/skybox/skyrender0002.bmp"
+    };
+
     Texture container = Texture("assets/container.jpg", GL_RGB, GL_REPEAT);
     Texture metal = Texture("assets/metal.jpg", GL_RGB, GL_REPEAT);
+    Texture sky = Texture(paths, GL_RGB, GL_CLAMP_TO_EDGE);
     
     unsigned int FBO;
     glGenFramebuffers(1, &FBO);
@@ -311,37 +344,34 @@ int main(int, char**) {
         projection = glm::perspective(glm::radians(camera.zoom), 800.0f / 600.0f, 0.1f, 100.0f);
         view       = camera.getViewMatrix();
   
+
         { // Cubes
             normal.use();
             normal.setMat4("view", view);
             normal.setMat4("projection", projection);
 
-            container.use(0);
+            sky.use(0);
             model = glm::mat4(1.0f);
-            model = glm::translate(model, { -1.0f, 0.01f, -1.0f });
-
-            normal.setInt("texture0", 0);
-            normal.setMat4("model", model);
-            glBindVertexArray(cVAO);
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-
-            model = glm::mat4(1.0f);
-            model = glm::translate(model, { 2.0f, 0.01f, 0.0f });
+            model = glm::translate(model, { 0.0f, 0.0f, 0.0f });
 
             normal.setMat4("model", model);
+            normal.setMat4("inverse_model", glm::inverse(model));
+            normal.setVec3("camera_position", camera.position);
             glBindVertexArray(cVAO);
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
-        
-        { // Planes
-            metal.use(0);
-            normal.setInt("texture0", 0);
 
-            model = glm::mat4(1.0f);
-            normal.setMat4("model", model);
+        { // Skybox
+            glDepthFunc(GL_LEQUAL);
+            skybox.use();
+            skybox.setMat4("projection", projection);
+            skybox.setMat4("view", glm::mat4(glm::mat3(view)));
 
-            glBindVertexArray(pVAO);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
+            sky.use(0);
+
+            glBindVertexArray(bVAO);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+            glDepthFunc(GL_LESS);
         }
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -351,11 +381,6 @@ int main(int, char**) {
         screen.use();
 
         glBindVertexArray(sVAO);
-        glDisable(GL_DEPTH_TEST);
-        glBindTexture(GL_TEXTURE_2D, color);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-
-        glBindVertexArray(mVAO);
         glDisable(GL_DEPTH_TEST);
         glBindTexture(GL_TEXTURE_2D, color);
         glDrawArrays(GL_TRIANGLES, 0, 6);

@@ -50,5 +50,5 @@ void main() {
         col += sampleTex[i] * kernel0[i];
     }
 	
-    FragColor = vec4(col, 1.0f);
+    FragColor = texture(texture0, TexCoords);
 }
