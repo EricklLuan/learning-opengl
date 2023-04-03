@@ -6,7 +6,6 @@ in vec2 TexCoords;
 
 uniform sampler2D texture0;
 
-
 void main() {
     const float offset = 1.0f / 500.0f;
 	
