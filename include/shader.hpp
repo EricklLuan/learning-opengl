@@ -14,7 +14,7 @@ private:
   void handleError(unsigned int shaderID, const char* error_text) const;
 
 public:
-  Shader(const char* vertexPath, const char* fragmentPath);
+  Shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath="");
 
   void use();
 

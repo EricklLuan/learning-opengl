@@ -93,7 +93,6 @@ int main(int, char**) {
     std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << "\n";
     std::cout << "GLSL Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << "\n";  
 
-
     float cubeVertices[] = {
         // Back face
         -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // Bottom-left
@@ -139,71 +138,11 @@ int main(int, char**) {
          -0.5f,  0.5f,  0.5f,  0.0f, 0.0f  // bottom-left        
     };
 
-    float skyboxVertices[] = {
-        // positions          
-        -1.0f,  1.0f, -1.0f,
-        -1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-
-        -1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
-
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-
-        -1.0f, -1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
-
-        -1.0f,  1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f, -1.0f,
-
-        -1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f,  1.0f
-    };
-
-    float planeVertices[] = {
-        // positions          // texture Coords (note we set these higher than 1 (together with GL_REPEAT as texture wrapping mode). this will cause the floor texture to repeat)
-         5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
-        -5.0f, -0.5f,  5.0f,  0.0f, 0.0f,
-        -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
-
-         5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
-        -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
-         5.0f, -0.5f, -5.0f,  2.0f, 2.0f
-    };
-
-    float quadVertices[] = {
-        // positions   // texCoords
-        -1.0f,  1.0f,  0.0f, 1.0f,
-        -1.0f, -1.0f,  0.0f, 0.0f,
-         1.0f, -1.0f,  1.0f, 0.0f,
-
-        -1.0f,  1.0f,  0.0f, 1.0f,
-         1.0f, -1.0f,  1.0f, 0.0f,
-         1.0f,  1.0f,  1.0f, 1.0f
+    float points[] = {
+        -0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
+         0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
+        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f,
+         0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f
     };
 
     stbi_set_flip_vertically_on_load(true);
@@ -232,119 +171,32 @@ int main(int, char**) {
     glBindVertexArray(pVAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, pVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
 
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
 
     glBindVertexArray(0);
 
-    unsigned int sVAO, sVBO;
-    glGenVertexArrays(1, &sVAO);
-    glGenBuffers(1, &sVBO);
-
-    glBindVertexArray(sVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, sVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-
-    glBindVertexArray(0);
-
-    unsigned int bVAO, bVBO;
-    glGenVertexArrays(1, &bVAO);
-    glGenBuffers(1, &bVBO);
-
-    glBindVertexArray(bVAO);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, bVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
-
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-
-    glBindVertexArray(0);
-
-    Shader screen(
-        "shaders/framebuffer/framebufferVS.glsl",
-        "shaders/framebuffer/framebufferFS.glsl"
+    Shader geometry(
+        "shaders/geometry/geometryVS.glsl",
+        "shaders/geometry/geometryFS.glsl",
+        "shaders/geometry/geometryGS.glsl"
     );
 
-    Shader red(
-        "shaders/uniform_buffers/uniformVS.glsl",
-        "shaders/uniform_buffers/redFS.glsl"
+    Shader exploding(
+        "shaders/geometry/exploding/explodingVS.glsl",
+        "shaders/geometry/exploding/explodingFS.glsl",
+        "shaders/geometry/exploding/explodingGS.glsl"
     );
 
-    Shader blue(
-        "shaders/uniform_buffers/uniformVS.glsl",
-        "shaders/uniform_buffers/blueFS.glsl"
-    );
+    Model backpack("models/backpack/backpack.obj");
 
-    Shader green(
-        "shaders/uniform_buffers/uniformVS.glsl",
-        "shaders/uniform_buffers/greenFS.glsl"
-    );
-
-    Shader yellow(
-        "shaders/uniform_buffers/uniformVS.glsl",
-        "shaders/uniform_buffers/yellowFS.glsl"
-    );
-
-    std::vector<const char*> paths = {
-        "assets/skybox/skyrender0001.bmp",
-        "assets/skybox/skyrender0003.bmp",
-        "assets/skybox/skyrender0005.bmp",
-        "assets/skybox/skyrender0006.bmp",
-        "assets/skybox/skyrender0004.bmp",
-        "assets/skybox/skyrender0002.bmp"
-    };
-
-    Texture container = Texture("assets/container.jpg", GL_RGB, GL_REPEAT);
-    Texture metal = Texture("assets/metal.jpg", GL_RGB, GL_REPEAT);
-    
-    unsigned int FBO;
-    glGenFramebuffers(1, &FBO);
-    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-
-    unsigned int color;
-    glGenTextures(1, &color);
-    glBindTexture(GL_TEXTURE_2D, color);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 600, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color, 0);
-
-    unsigned int RBO;
-    glGenRenderbuffers(1, &RBO);
-    glBindRenderbuffer(GL_RENDERBUFFER, RBO);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 800, 600);
-
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
-
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        std::cout << "ERROR::FRAMEBUFFER: Framebuffer is not complete!\n";
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    unsigned int uniformRed = glGetUniformBlockIndex(red.getID(), "Matrices");
-    unsigned int uniformBlue = glGetUniformBlockIndex(blue.getID(), "Matrices");
-    unsigned int uniformGreen = glGetUniformBlockIndex(green.getID(), "Matrices");
-    unsigned int uniformYellow = glGetUniformBlockIndex(yellow.getID(), "Matrices");
-
-    glUniformBlockBinding(red.getID(), uniformRed, 0);
-    glUniformBlockBinding(blue.getID(), uniformBlue, 0);
-    glUniformBlockBinding(green.getID(), uniformGreen, 0);
-    glUniformBlockBinding(yellow.getID(), uniformYellow, 0);
+    unsigned int geometryVS = glGetUniformBlockIndex(exploding.getID(), "Matrices");
+    glUniformBlockBinding(exploding.getID(), geometryVS, 0);
 
     unsigned int mUBO;
     glGenBuffers(1, &mUBO);
@@ -358,6 +210,8 @@ int main(int, char**) {
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(projection));
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
+    glEnable(GL_DEPTH_TEST);
+
     while (!glfwWindowShouldClose(window)) {
         process_input(window);
 
@@ -365,93 +219,28 @@ int main(int, char**) {
         delta = current_frame - last_frame;
         last_frame = current_frame;
 
-        glBindFramebuffer(GL_FRAMEBUFFER, FBO);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_DEPTH_TEST);
-
+        
         glm::mat4 model;
-
         glm::mat4 view = camera.getViewMatrix();
         glBindBuffer(GL_UNIFORM_BUFFER, mUBO);
         glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(view));
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
-        glBindVertexArray(cVAO);
-
-        { // red
-            red.use();
-
+        {
+            exploding.use();
+            
             model = glm::mat4(1.0f);
-            model = glm::translate(model, { -0.75f, 0.75f, 0.0f });
+            exploding.setMat4("model", model);
+            exploding.setFloat("time", (float)glfwGetTime());
 
-            red.setMat4("model", model);
-
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+            backpack.draw(exploding);
         }
-
-        { // blue
-            blue.use();
-
-            model = glm::mat4(1.0f);
-            model = glm::translate(model, { 0.75f, -0.75f, 0.0f });
-
-            red.setMat4("model", model);
-
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
-
-        { // green
-            green.use();
-
-            model = glm::mat4(1.0f);
-            model = glm::translate(model, { 0.75f, 0.75f, 0.0f });
-
-            red.setMat4("model", model);
-
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
-
-        { // yellow
-            yellow.use();
-
-            model = glm::mat4(1.0f);
-            model = glm::translate(model, { -0.75f, -0.75f, 0.0f });
-
-            red.setMat4("model", model);
-
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
-        glDisable(GL_CULL_FACE);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        screen.use();
-
-        glBindVertexArray(sVAO);
-        glDisable(GL_DEPTH_TEST);
-        
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, color);
-        screen.setInt("texture0", 0);
-
-        glDrawArrays(GL_TRIANGLES, 0, 6);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
-
     }
 
-    glDeleteFramebuffers(1, &FBO);
-    glDeleteBuffers(1, &cVBO);
-    glDeleteBuffers(1, &pVBO);
-    glDeleteVertexArrays(1, &cVAO);
-    glDeleteVertexArrays(1, &pVAO);
-    
     glfwTerminate();
 }
-  

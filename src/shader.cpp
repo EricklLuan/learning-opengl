@@ -17,33 +17,44 @@ void Shader::handleError(unsigned int shaderID, const char* error_text) const {
   }
 }
 
-Shader::Shader(const char* vertexPath, const char* fragmentPath) {
+Shader::Shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath) {
   std::string vertexSRC;
   std::string fragmentSRC;
+  std::string geometrySRC;
+
 
   std::ifstream vertexFile;
   std::ifstream fragmentFile;
+  std::ifstream geometryFile;
 
   vertexFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
   fragmentFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+  if (strcmp(geometryPath, (const char*)"") != 0) 
+      geometryFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 
   try {
     vertexFile.open(vertexPath);
     fragmentFile.open(fragmentPath);
+    if (strcmp(geometryPath, (const char*)"") != 0)
+        geometryFile.open(geometryPath);
 
-    std::stringstream vertex, fragment;
+    std::stringstream vertex, fragment, geometry;
 
     vertex << vertexFile.rdbuf();
     fragment << fragmentFile.rdbuf();
+    if (strcmp(geometryPath, (const char*)"") != 0)
+        geometry << geometryFile.rdbuf();
 
     vertexSRC = vertex.str();
     fragmentSRC = fragment.str();
+    geometrySRC = geometry.str();
   } catch (std::ifstream::failure e) {
     std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ\n";
   }
 
   const char* vCode = vertexSRC.c_str();
   const char* fCode = fragmentSRC.c_str();
+  const char* gCode = geometrySRC.c_str();
 
   unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
   glShaderSource(vertexShader, 1, &vCode, NULL);
@@ -55,9 +66,18 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath) {
   glCompileShader(fragmentShader);
   handleError(fragmentShader, "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED: ");
 
+  unsigned int geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
+  if (strcmp(geometryPath, (const char*)"") != 0) {
+    glShaderSource(geometryShader, 1, &gCode, NULL);
+    glCompileShader(geometryShader);
+    handleError(geometryShader, "ERROR::SHADER::GEOMETRY::COMPILATION_FAILED: ");
+  }
+
   ID = glCreateProgram();
   glAttachShader(ID, vertexShader);
   glAttachShader(ID, fragmentShader);
+  if (strcmp(geometryPath, (const char*)"") != 0)
+      glAttachShader(ID, geometryShader);
 
   glBindAttribLocation(ID, 0, "position");
   glBindAttribLocation(ID, 1, "normals");
@@ -75,6 +95,7 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath) {
 
   glDeleteShader(vertexShader);
   glDeleteShader(fragmentShader);
+  glDeleteShader(geometryShader);
 }
 
 void Shader::use() {
