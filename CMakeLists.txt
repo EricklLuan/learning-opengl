@@ -7,16 +7,14 @@ find_package(glad CONFIG REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(assimp CONFIG REQUIRED)
 
-
 add_executable(learning-opengl 
 	"src/main.cpp" 
-	"include/shader.hpp"
 	"src/shader.cpp" 
-	"include/texture.hpp"
 	"src/texture.cpp" 
-	"include/camera.hpp" 
 	"src/camera.cpp"
- "src/mesh.cpp" "src/model.cpp")
+	"src/mesh.cpp" 
+	"src/model.cpp"
+)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
@@ -27,4 +25,3 @@ target_include_directories(learning-opengl PRIVATE "include")
 target_link_libraries(learning-opengl PRIVATE glad::glad)
 target_link_libraries(learning-opengl PRIVATE glfw)
 target_link_libraries(learning-opengl PRIVATE assimp::assimp)
-
