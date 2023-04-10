@@ -134,9 +134,23 @@ int main(int, char**) {
         std::vector<const char*>{"aPosition", "aNormal", "aTexCoords"}
     );
 
-    Texture plank("assets/plank.png", GL_RGB, GL_REPEAT);
+    Texture plank("assets/plank.png", GL_SRGB, GL_RGB, GL_REPEAT);
 
     glEnable(GL_DEPTH_TEST);
+
+    glm::vec3 lightPositions[] = {
+        glm::vec3(-3.0f, 0.0f, 0.0f),
+        glm::vec3(-1.0f, 0.0f, 0.0f),
+        glm::vec3(1.0f, 0.0f, 0.0f),
+        glm::vec3(3.0f, 0.0f, 0.0f)
+    };
+
+    glm::vec3 lightColors[] = {
+        glm::vec3(0.25),
+        glm::vec3(0.50),
+        glm::vec3(0.75),
+        glm::vec3(1.00)
+    };
 
     while (!glfwWindowShouldClose(window)) {
         process_input(window);
@@ -150,7 +164,7 @@ int main(int, char**) {
 
         glm::mat4 model = glm::mat4(1.0f);
         glm::mat4 view = camera.getViewMatrix();
-        glm::mat4 projection = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
+        glm::mat4 projection = glm::perspective(camera.zoom, 800.0f / 600.0f, 0.1f, 100.0f);
 
         {
             specularShader.use();
@@ -162,7 +176,8 @@ int main(int, char**) {
             specularShader.setMat4("projection", projection);
             specularShader.setMat4("view", view);
             specularShader.setMat4("inverseModel", glm::inverse(model));
-            specularShader.setVec3("lightPosition", { 0.0f, 1.0f, 0.3f });
+            glUniform3fv(glGetUniformLocation(specularShader.getID(), "lightPosition"), 4, &lightPositions[0][0]);
+            glUniform3fv(glGetUniformLocation(specularShader.getID(), "lightColor"), 4, &lightColors[0][0]);
             specularShader.setVec3("viewPosition", camera.position);
             specularShader.setInt("blinn", blinn);
 

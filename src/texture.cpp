@@ -5,7 +5,7 @@
 
 #include <iostream>
 
-Texture::Texture(const char* path, GLenum ctype, GLenum wrap) {
+Texture::Texture(const char* path, GLenum ctype, GLenum rtype, GLenum wrap) {
 
 	glGenTextures(1, &ID);
 	glBindTexture(GL_TEXTURE_2D, ID);
@@ -20,7 +20,7 @@ Texture::Texture(const char* path, GLenum ctype, GLenum wrap) {
 	unsigned char* data = stbi_load(path, &width, &height, &nrChannels, 0);
 
 	if (data) {
-		glTexImage2D(GL_TEXTURE_2D, 0, ctype, width, height, 0, ctype, GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, ctype, width, height, 0, rtype, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	} else {
 		std::cout << "Failed to load texture\n";
