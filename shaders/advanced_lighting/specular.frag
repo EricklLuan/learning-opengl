@@ -8,12 +8,14 @@ in vec2 TexCoords;
 
 uniform sampler2D plank;
 
-uniform vec3 lightPosition[4];
-uniform vec3 lightColor[4];
+uniform vec3 lightPosition[3];
+uniform vec3 lightColor[3];
 uniform vec3 viewPosition;
 
 vec3 blinn(vec3 normal, vec3 fragPos, vec3 lightPos, vec3 lightColor) {
 	
+	vec3 ambient = vec3(0.02f) * lightColor;
+
 	vec3 lightDir = normalize(lightPos - fragPos);
 	
 	// diffuse:
@@ -33,15 +35,17 @@ vec3 blinn(vec3 normal, vec3 fragPos, vec3 lightPos, vec3 lightColor) {
 
 	diffuse *= attenuation;
 	specular *= attenuation;
+	ambient *= attenuation;
+	
 
-	return diffuse + specular;
+	return ambient + diffuse + specular;
 }
 
 void main() {
 	vec3 color = texture(plank, TexCoords).rgb;
 	vec3 light = vec3(0.0f);
 
-	for (int i=0; i<4; i++) {light += blinn(normalize(Normal), FragCoord, lightPosition[i], lightColor[i]);}
+	for (int i=0; i<3; i++) {light += blinn(normalize(Normal), FragCoord, lightPosition[i], lightColor[i]);}
 
 	color *= light;
 	color = pow(color, vec3(1.0f/2.2f));
