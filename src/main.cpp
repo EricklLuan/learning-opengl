@@ -19,6 +19,7 @@ float last_frame = 0.0f;
 float lastX = 400;
 float lastY = 300;
 bool firstMouse = true;
+float height = 0.1f;
 
 Camera camera = Camera({ 0.0f, 0.0f, 3.0f }, { 0.0f, 1.0f, 0.0f });
 
@@ -52,6 +53,16 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 static void process_input(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
+        height += 0.005;
+        if (height > 1.0f) height = 1.0f;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+        height -= 0.005;
+        if (height < 0.0f) height = 0.0f;
     }
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) camera.handleKeyboard(delta, C_FORWARD);
@@ -191,20 +202,23 @@ int main(int, char**) {
 
     glEnable(GL_DEPTH_TEST);
 
-    Texture brick_wall = Texture("assets/normal-mapping/brickwall.jpg", GL_RGB, GL_RGB, GL_REPEAT);
-    Texture brick_wall_map = Texture("assets/normal-mapping/brickwall_normal.jpg", GL_RGB, GL_RGB, GL_REPEAT);
+    Texture brick_wall = Texture("assets/parallax-mapping/bricks.jpg", GL_RGB, GL_RGB, GL_REPEAT);
+    Texture brick_wall_norm = Texture("assets/parallax-mapping/bricks_normal.jpg", GL_RGB, GL_RGB, GL_REPEAT);
+    Texture brick_wall_disp = Texture("assets/parallax-mapping/bricks_disp.jpg", GL_RGB, GL_RGB, GL_REPEAT);
 
-    Shader normalmapShader = Shader(
-        "shaders/normal_mapping/map.vert",
-        "shaders/normal_mapping/map.frag",
+    Shader parallaxmapShader = Shader(
+        "shaders/parallax_mapping/parallax.vert",
+        "shaders/parallax_mapping/parallax.frag",
         std::vector<const char*>{"aPosition", "aNormal", "aTexCoords", "aTangent", "aBitangent"}
     );
 
-    normalmapShader.use();
+    parallaxmapShader.use();
     brick_wall.use(0);
-    normalmapShader.setInt("diffuse_texture", 0);
-    brick_wall_map.use(1);
-    normalmapShader.setInt("normal_map", 1);
+    parallaxmapShader.setInt("diffuse_texture", 0);
+    brick_wall_norm.use(1);
+    parallaxmapShader.setInt("normal_map", 1);
+    brick_wall_disp.use(2);
+    parallaxmapShader.setInt("displacement_map", 2);
 
     while (!glfwWindowShouldClose(window)) {
         process_input(window);
@@ -220,15 +234,14 @@ int main(int, char**) {
         glm::mat4 view = camera.getViewMatrix();
         glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), 800.0f / 600.0f, 0.1f, 100.0f);
 
-        model = glm::rotate(model, glm::radians((float)glfwGetTime() * -10), glm::normalize(glm::vec3{ 1.0f, 0.0f, 1.0f }));
-
-        normalmapShader.use();
-        normalmapShader.setMat4("model", model);
-        normalmapShader.setMat4("view", view);
-        normalmapShader.setMat4("projection", projection);
-        normalmapShader.setMat4("inverseModel", glm::inverse(model));
-        normalmapShader.setVec3("viewPos", camera.position);
-        normalmapShader.setVec3("lightPos", { 0.5f, 1.0f, 0.3f });
+        parallaxmapShader.use();
+        parallaxmapShader.setMat4("model", model);
+        parallaxmapShader.setMat4("view", view);
+        parallaxmapShader.setMat4("projection", projection);
+        parallaxmapShader.setMat4("inverseModel", glm::inverse(model));
+        parallaxmapShader.setVec3("viewPos", camera.position);
+        parallaxmapShader.setVec3("lightPos", { 0.5f, 1.0f, 0.3f });
+        parallaxmapShader.setFloat("height_scale", height);
 
         renderQuad();
 
