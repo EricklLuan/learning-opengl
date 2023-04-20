@@ -20,6 +20,7 @@ float lastX = 400;
 float lastY = 300;
 bool firstMouse = true;
 float height = 0.1f;
+bool hdr = true;
 
 Camera camera = Camera({ 0.0f, 0.0f, 3.0f }, { 0.0f, 1.0f, 0.0f });
 
@@ -56,13 +57,18 @@ static void process_input(GLFWwindow* window) {
     }
 
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-        height += 0.005;
-        if (height > 1.0f) height = 1.0f;
+        std::cout << "Exposure: " << height << "\n";
+        height += 0.05;
     }
 
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-        height -= 0.005;
+        std::cout << "Exposure: " << height << "\n";
+        height -= 0.05;
         if (height < 0.0f) height = 0.0f;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS) {
+        hdr = !hdr;
     }
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) camera.handleKeyboard(delta, C_FORWARD);
@@ -171,6 +177,114 @@ void renderQuad() {
     glBindVertexArray(0);
 }
 
+unsigned int cubeVAO = 0;
+unsigned int cubeVBO = 0;
+void renderCube() {
+    if (cubeVAO == 0) {
+        float vertices[] = {
+            // back face
+            -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+             1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+             1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f, // bottom-right         
+             1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+            -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+            -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f, // top-left
+            // front face
+            -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+             1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f, // bottom-right
+             1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+             1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+            -1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f, // top-left
+            -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+            // left face
+            -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+            -1.0f,  1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-left
+            -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+            -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+            -1.0f, -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+            -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+            // right face
+             1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+             1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+             1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-right         
+             1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+             1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+             1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-left     
+             // bottom face
+             -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+              1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f, // top-left
+              1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+              1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+             -1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+             -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+             // top face
+             -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+              1.0f,  1.0f , 1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+              1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f, // top-right     
+              1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+             -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+             -1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left        
+        };
+
+
+        glGenVertexArrays(1, &cubeVAO);
+        glGenBuffers(1, &cubeVBO);
+
+        glBindVertexArray(cubeVAO);
+
+        glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+
+        glBindVertexArray(0);
+    }
+
+    glBindVertexArray(cubeVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+}
+
+unsigned int frameVAO = 0;
+unsigned int frameVBO = 0;
+void renderFrame() {
+    if (frameVAO == 0) {
+        float quadVertices[] = {
+            // positions        // texture Coords
+            -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+            -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+             1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+             1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+        };
+
+        glGenVertexArrays(1, &frameVAO);
+        glGenBuffers(1, &frameVBO);
+
+        glBindVertexArray(frameVAO);
+
+        glBindBuffer(GL_ARRAY_BUFFER, frameVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+        
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+        glBindVertexArray(0);
+    }
+
+    glBindVertexArray(frameVAO);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
+}
+
 int main(int, char**) {
     glfwSetErrorCallback(&glfwError);
     glfwInit();
@@ -202,23 +316,64 @@ int main(int, char**) {
 
     glEnable(GL_DEPTH_TEST);
 
-    Texture brick_wall = Texture("assets/parallax-mapping/bricks.jpg", GL_RGB, GL_RGB, GL_REPEAT);
-    Texture brick_wall_norm = Texture("assets/parallax-mapping/bricks_normal.jpg", GL_RGB, GL_RGB, GL_REPEAT);
-    Texture brick_wall_disp = Texture("assets/parallax-mapping/bricks_disp.jpg", GL_RGB, GL_RGB, GL_REPEAT);
+    unsigned int framebuffer;
+    glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
-    Shader parallaxmapShader = Shader(
-        "shaders/parallax_mapping/parallax.vert",
-        "shaders/parallax_mapping/parallax.frag",
-        std::vector<const char*>{"aPosition", "aNormal", "aTexCoords", "aTangent", "aBitangent"}
+    unsigned int color_buffer_texture;
+    glGenTextures(1, &color_buffer_texture);
+    glBindTexture(GL_TEXTURE_2D, color_buffer_texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 800, 600, 0, GL_RGBA, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_buffer_texture, 0);
+
+    unsigned int depth_rbo;
+    glGenRenderbuffers(1, &depth_rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, depth_rbo);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 800, 600);
+
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_rbo);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cout << "The framebuffer is incomplete\n";
+        return 0;
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    std::vector<glm::vec3> lightPositions;
+    lightPositions.push_back(glm::vec3(0.0f, 0.0f, 49.5f)); // back light
+    lightPositions.push_back(glm::vec3(-1.4f, -1.9f, 9.0f));
+    lightPositions.push_back(glm::vec3(0.0f, -1.8f, 4.0f));
+    lightPositions.push_back(glm::vec3(0.8f, -1.7f, 6.0f));
+    // colors
+    std::vector<glm::vec3> lightColors;
+    lightColors.push_back(glm::vec3(200.0f, 200.0f, 200.0f));
+    lightColors.push_back(glm::vec3(0.1f, 0.0f, 0.0f));
+    lightColors.push_back(glm::vec3(0.0f, 0.0f, 0.2f));
+    lightColors.push_back(glm::vec3(0.0f, 0.1f, 0.0f));
+
+    Shader HDR(
+        "shaders/HDR/hdr.vert",
+        "shaders/HDR/hdr.frag",
+        std::vector<const char*>{"aPosition", "aTexCoords"}
     );
 
-    parallaxmapShader.use();
-    brick_wall.use(0);
-    parallaxmapShader.setInt("diffuse_texture", 0);
-    brick_wall_norm.use(1);
-    parallaxmapShader.setInt("normal_map", 1);
-    brick_wall_disp.use(2);
-    parallaxmapShader.setInt("displacement_map", 2);
+    Shader shader(
+        "shaders/HDR/normal.vert",
+        "shaders/HDR/normal.frag",
+        std::vector<const char*>{"aPosition", "aNormal", "aTexCoords"}
+    );
+
+    Texture wood("assets/plank.png", GL_RGB, GL_RGB, GL_REPEAT);
+
+    shader.use();
+    shader.setInt("diffuse_texture", 0);
+
+    HDR.use();
+    HDR.setInt("scene", 1);
 
     while (!glfwWindowShouldClose(window)) {
         process_input(window);
@@ -227,23 +382,43 @@ int main(int, char**) {
         delta = current_frame - last_frame;
         last_frame = current_frame;
 
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glm::mat4 model = glm::mat4(1.0f);
-        glm::mat4 view = camera.getViewMatrix();
-        glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), 800.0f / 600.0f, 0.1f, 100.0f);
+            glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), 800.0f / 600.0f, 0.1f, 100.0f);
+            glm::mat4 view = camera.getViewMatrix();
+            
+            {
+                glm::mat4 model = glm::mat4(1.0f);
+                model = glm::translate(model, glm::vec3(0.0f, 0.0f, 25.0));
+                model = glm::scale(model, glm::vec3(2.5f, 2.5f, 27.5f));
+                shader.use();
+                wood.use(0);
+                
+                for (unsigned int i = 0; i < lightPositions.size(); i++) {
+                    shader.setVec3("lights[" + std::to_string(i) + "].position", lightPositions[i]);
+                    shader.setVec3("lights[" + std::to_string(i) + "].color", lightColors[i]);
+                }
 
-        parallaxmapShader.use();
-        parallaxmapShader.setMat4("model", model);
-        parallaxmapShader.setMat4("view", view);
-        parallaxmapShader.setMat4("projection", projection);
-        parallaxmapShader.setMat4("inverseModel", glm::inverse(model));
-        parallaxmapShader.setVec3("viewPos", camera.position);
-        parallaxmapShader.setVec3("lightPos", { 0.5f, 1.0f, 0.3f });
-        parallaxmapShader.setFloat("height_scale", height);
+                shader.setMat4("projection", projection);
+                shader.setMat4("view", view);
+                shader.setMat4("model", model);
+                shader.setMat4("inverseModel", glm::inverse(model));
 
-        renderQuad();
+                renderCube();
+            }
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        HDR.use();
+        HDR.setBool("hdr", hdr);
+        HDR.setFloat("exposure", height);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, color_buffer_texture);
+
+        renderFrame();
 
         glfwSwapBuffers(window);
         glfwPollEvents();

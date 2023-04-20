@@ -27,7 +27,7 @@ public:
 
 	glm::vec3 wordUP = {0.0f, 1.0f, 0.0f};
 
-	float SPEED = 2.25f;
+	float SPEED = 5.25f;
 
 	float sensibility = 0.1f;
 	float zoom = 45.0f;
