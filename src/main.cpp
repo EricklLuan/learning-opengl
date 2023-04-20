@@ -316,18 +316,43 @@ int main(int, char**) {
 
     glEnable(GL_DEPTH_TEST);
 
+    unsigned int pingpongFBO[2];
+    unsigned int pingpongBuffers[2];
+    glGenFramebuffers(2, pingpongFBO);
+    glGenTextures(2, pingpongBuffers);
+
+    for (unsigned int i = 0; i < 2; i++) {
+        glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[i]);
+        glBindTexture(GL_TEXTURE_2D, pingpongBuffers[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 800, 600, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pingpongBuffers[i], 0);
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
     unsigned int framebuffer;
     glGenFramebuffers(1, &framebuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
-    unsigned int color_buffer_texture;
-    glGenTextures(1, &color_buffer_texture);
-    glBindTexture(GL_TEXTURE_2D, color_buffer_texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 800, 600, 0, GL_RGBA, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    unsigned int color_buffers[2];
+    glGenTextures(2, color_buffers);
+    for (unsigned int i = 0; i < 2; i++) {
+        glBindTexture(GL_TEXTURE_2D, color_buffers[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 800, 600, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_buffer_texture, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0+i, GL_TEXTURE_2D, color_buffers[i], 0);
+    }
+
+    unsigned int attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+    glDrawBuffers(2, attachments);
 
     unsigned int depth_rbo;
     glGenRenderbuffers(1, &depth_rbo);
@@ -344,28 +369,37 @@ int main(int, char**) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     std::vector<glm::vec3> lightPositions;
-    lightPositions.push_back(glm::vec3(0.0f, 0.0f, 49.5f)); // back light
-    lightPositions.push_back(glm::vec3(-1.4f, -1.9f, 9.0f));
-    lightPositions.push_back(glm::vec3(0.0f, -1.8f, 4.0f));
-    lightPositions.push_back(glm::vec3(0.8f, -1.7f, 6.0f));
+    lightPositions.push_back(glm::vec3(10.0f, 2.0f, 15.5f)); // back light
+    lightPositions.push_back(glm::vec3(-12.0f, -5.0f, 15.5f)); // back light
     // colors
     std::vector<glm::vec3> lightColors;
-    lightColors.push_back(glm::vec3(200.0f, 200.0f, 200.0f));
-    lightColors.push_back(glm::vec3(0.1f, 0.0f, 0.0f));
-    lightColors.push_back(glm::vec3(0.0f, 0.0f, 0.2f));
-    lightColors.push_back(glm::vec3(0.0f, 0.1f, 0.0f));
+    lightColors.push_back(glm::vec3(50.0f, 50.0f, 50.0f));
+    lightColors.push_back(glm::vec3(100.0f, 50.0f, 50.0f));
 
     Shader HDR(
-        "shaders/HDR/hdr.vert",
-        "shaders/HDR/hdr.frag",
+        "shaders/bloom/hdr.vert",
+        "shaders/bloom/hdr.frag",
         std::vector<const char*>{"aPosition", "aTexCoords"}
     );
 
     Shader shader(
-        "shaders/HDR/normal.vert",
-        "shaders/HDR/normal.frag",
+        "shaders/bloom/normal.vert",
+        "shaders/bloom/normal.frag",
         std::vector<const char*>{"aPosition", "aNormal", "aTexCoords"}
     );
+
+    Shader bloom(
+        "shaders/bloom/bloom.vert",
+        "shaders/bloom/bloom.frag",
+        std::vector<const char*>{"aPosition", "aTexCoords"}
+    );
+
+    Shader light(
+        "shaders/bloom/light.vert",
+        "shaders/bloom/light.frag",
+        std::vector<const char*>{"aPosition"}
+    );
+
 
     Texture wood("assets/plank.png", GL_RGB, GL_RGB, GL_REPEAT);
 
@@ -389,10 +423,9 @@ int main(int, char**) {
             glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), 800.0f / 600.0f, 0.1f, 100.0f);
             glm::mat4 view = camera.getViewMatrix();
             
-            {
+            for (unsigned int j = 0; j < 4; j++) { // cubes
                 glm::mat4 model = glm::mat4(1.0f);
-                model = glm::translate(model, glm::vec3(0.0f, 0.0f, 25.0));
-                model = glm::scale(model, glm::vec3(2.5f, 2.5f, 27.5f));
+                model = glm::translate(model, glm::vec3(2.0f * j, 0.0f, 5.0f * j));
                 shader.use();
                 wood.use(0);
                 
@@ -407,16 +440,53 @@ int main(int, char**) {
                 shader.setMat4("inverseModel", glm::inverse(model));
 
                 renderCube();
+
             }
+
+            { // lights
+                glm::mat4 model = glm::mat4(1.0f);
+                light.use();
+                wood.use(0);
+
+                for (unsigned int i = 0; i < lightPositions.size(); i++) {
+                    model = glm::translate(model, lightPositions[i]);
+                    model = glm::scale(model, glm::vec3(0.3f));
+                    light.setVec3("lightColor", lightColors[i]);
+                    light.setMat4("projection", projection);
+                    light.setMat4("view", view);
+                    light.setMat4("model", model);
+
+                    renderCube();
+                }
+
+            }
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+        bool horizontal = true, first_iteration = true;
+        bloom.use();
+        for (unsigned int i = 0; i < 10; i++) {
+            glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[horizontal]);
+            bloom.setBool("horizontal", horizontal);
+            glBindTexture(GL_TEXTURE_2D, first_iteration ? color_buffers[1] : pingpongBuffers[!horizontal]);
+            renderFrame();
+            horizontal = !horizontal;
+            if (first_iteration) {
+                first_iteration = false;
+            }
+        }
+
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         HDR.use();
-        HDR.setBool("hdr", hdr);
         HDR.setFloat("exposure", height);
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, color_buffer_texture);
+        glBindTexture(GL_TEXTURE_2D, color_buffers[0]);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, pingpongBuffers[!horizontal]);
 
         renderFrame();
 
