@@ -377,7 +377,7 @@ int main(int, char**) {
         textShader.setMat4("projection", projection);
 
         renderText(textShader, "This is sample text", 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
-        renderText(textShader, "(C) LearnOpenGL.com", 560.0f, 570.0f, 0.5f, glm::vec3(0.3, 0.7f, 0.9f));
+        renderText(textShader, "(C) LearnOpenGL.com", 560.0f, 770.0f, 0.5f, glm::vec3(0.3, 0.7f, 0.9f));
 
         glfwSwapBuffers(window);
         glfwPollEvents();
