@@ -1,10 +1,12 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include <filesystem>
 #include <iostream>
-#include <cmath>
+#include <vector>
 #include <map>
+
+#include <ft2build.h>
+#include FT_FREETYPE_H 
 
 #include <stb_image.h>
 
@@ -23,6 +25,15 @@ float height = 0.1f;
 bool hdr = true;
 
 Camera camera = Camera({ 0.0f, 0.0f, 3.0f }, { 0.0f, 1.0f, 0.0f });
+
+struct Character {
+    unsigned int TextureID;  // ID handle of the glyph texture
+    glm::ivec2   Size;       // Size of glyph
+    glm::ivec2   Bearing;    // Offset from baseline to left/top of glyph
+    unsigned int Advance;    // Offset to advance to next glyph
+};
+
+std::map<char, Character> characters;
 
 static void scroll_callback(GLFWwindow* window, double xOffset, double yOffset) {
     camera.handleScroll(static_cast<float>(yOffset));
@@ -185,6 +196,66 @@ void renderQuad() {
     glBindVertexArray(0);
 }
 
+static void checkError(const char* file, int line) {
+    GLenum errorCode;
+    while ((errorCode = glGetError()) != GL_NO_ERROR) {
+        std::string error;
+        switch (errorCode) 
+        {
+            case GL_INVALID_ENUM:                  error = "INVALID_ENUM"; break;
+            case GL_INVALID_VALUE:                 error = "INVALID_VALUE"; break;
+            case GL_INVALID_OPERATION:             error = "INVALID_OPERATION"; break;
+            case GL_STACK_OVERFLOW:                error = "STACK_OVERFLOW"; break;
+            case GL_STACK_UNDERFLOW:               error = "STACK_UNDERFLOW"; break;
+            case GL_INVALID_FRAMEBUFFER_OPERATION: error = "INVALID_FRAMEBUFFER_OPERATION"; break;
+        }
+
+        std::cout << "\033[31m\nOPENGL::ERROR::" << error << " | " << file << " (" << line << ")\033[0m\n";
+    }
+}
+
+#define glCheckError() checkError(__FILE__, __LINE__); 
+
+unsigned int VAO, VBO;
+void renderText(Shader& shader, std::string text, float x, float y, float scale, glm::vec3 color) {
+    shader.use();
+
+    shader.setVec3("textColor", color);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindVertexArray(VAO);
+
+    std::string::const_iterator c;
+    for (c = text.begin(); c != text.end(); c++) {
+        Character ch = characters[*c];
+
+        float xPos = x + ch.Bearing.x * scale;
+        float yPos = y - (ch.Size.y - ch.Bearing.y) * scale;
+
+        float w = ch.Size.x * scale;
+        float h = ch.Size.y * scale;
+    
+        float vertices[6][4] = {
+            { xPos,     yPos + h, 0.0f, 0.0f},
+            { xPos,     yPos,     0.0f, 1.0f},
+            { xPos + w, yPos,     1.0f, 1.0f},
+            
+            { xPos,     yPos + h, 0.0f, 0.0f},
+            { xPos + w, yPos,     1.0f, 1.0f},
+            { xPos + w, yPos + h, 1.0f, 0.0f},
+        };
+
+        glBindTexture(GL_TEXTURE_2D, ch.TextureID);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        x += (ch.Advance >> 6) * scale;
+    }
+
+}
+
 int main(int, char**) {
     glfwSetErrorCallback(&glfwError);
     glfwInit();
@@ -214,107 +285,82 @@ int main(int, char**) {
     std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << "\n";
     std::cout << "GLSL Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << "\n";
 
-    unsigned int gBuffer;
-    glGenFramebuffers(1, &gBuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
-
-    unsigned int gPosition;
-    glGenTextures(1, &gPosition);
-    glBindTexture(GL_TEXTURE_2D, gPosition);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 800, 600, 0, GL_RGBA, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPosition, 0);
-
-    unsigned int gNormal;
-    glGenTextures(1, &gNormal);
-    glBindTexture(GL_TEXTURE_2D, gNormal);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 800, 600, 0, GL_RGBA, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormal, 0);
-
-    unsigned int gAlbedoSpec;
-    glGenTextures(1, &gAlbedoSpec);
-    glBindTexture(GL_TEXTURE_2D, gAlbedoSpec);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 800, 600, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gAlbedoSpec, 0);
-
-    unsigned int attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
-
-    glDrawBuffers(3, attachments);
-
-    unsigned int depth_rbo;
-    glGenRenderbuffers(1, &depth_rbo);
-    glBindRenderbuffer(GL_RENDERBUFFER, depth_rbo);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 800, 600);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_rbo);
-
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        std::cout << "The framebuffer is not complete";
-        return 0;
-    }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    std::vector<glm::vec3> objectPositions;
-    objectPositions.push_back(glm::vec3(-3.0, -0.5, -3.0));
-    objectPositions.push_back(glm::vec3(0.0, -0.5, -3.0));
-    objectPositions.push_back(glm::vec3(3.0, -0.5, -3.0));
-    objectPositions.push_back(glm::vec3(-3.0, -0.5, 0.0));
-    objectPositions.push_back(glm::vec3(0.0, -0.5, 0.0));
-    objectPositions.push_back(glm::vec3(3.0, -0.5, 0.0));
-    objectPositions.push_back(glm::vec3(-3.0, -0.5, 3.0));
-    objectPositions.push_back(glm::vec3(0.0, -0.5, 3.0));
-    objectPositions.push_back(glm::vec3(3.0, -0.5, 3.0));
-
-    Shader gBufferShader(
-        "shaders/deferred_shading/g_buffer.vert",
-        "shaders/deferred_shading/g_buffer.frag",
-        std::vector<const char*>{"aPosition", "aNormal", "aTexCoords"}
-    );
-
-    Shader screenShader(
-        "shaders/deferred_shading/postprocessing.vert",
-        "shaders/deferred_shading/postprocessing.frag",
-        std::vector<const char*>{"aPosition", "aTexCoords"}
-    );
-
-    Shader lightBoxShader(
-        "shaders/deferred_shading/light_box.vert",
-        "shaders/deferred_shading/light_box.frag",
-        std::vector<const char*>{"aPosition"}
-    );
-
-    stbi_set_flip_vertically_on_load(true);
-    Model backpack("models/backpack/backpack.obj");
-
-    const unsigned int NR_LIGHTS = 16;
-    std::vector<glm::vec3> lightPositions;
-    std::vector<glm::vec3> lightColors;
-    srand(13);
-    for (unsigned int i = 0; i < NR_LIGHTS; i++)
-    {
-        // calculate slightly random offsets
-        float xPos = static_cast<float>(((rand() % 100) / 100.0) * 6.0 - 3.0);
-        float yPos = static_cast<float>(((rand() % 100) / 100.0) * 6.0 - 4.0);
-        float zPos = static_cast<float>(((rand() % 100) / 100.0) * 6.0 - 3.0);
-        lightPositions.push_back(glm::vec3(xPos, yPos, zPos));
-        // also calculate random color
-        float rColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.0
-        float gColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.0
-        float bColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.0
-        lightColors.push_back(glm::vec3(rColor, gColor, bColor));
-    }
-
-    screenShader.use();
-    screenShader.setInt("gPosition", 0);
-    screenShader.setInt("gNormal", 1);
-    screenShader.setInt("gAlbedoSpec", 2);
 
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    FT_Library ft;
+    if (FT_Init_FreeType(&ft)) {
+        std::cout << "ERROR::FREETYPE: Could not init FreeType Library\n";
+        return -1;
+    }
+
+    FT_Face fc;
+    if (FT_New_Face(ft, "fonts/Gamer.ttf", 0, &fc)) {
+        std::cout << "ERROR::FREETYPE: Failed to load font\n";
+        return -1;
+    }
+
+    FT_Set_Pixel_Sizes(fc, 0, 48);
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 4, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    for (unsigned char i = 0; i < 252; i++) {
+
+        if (FT_Load_Char(fc, i, FT_LOAD_RENDER)) {
+            std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
+            continue;
+        }
+
+        unsigned int texture;
+        glGenTextures(1, &texture);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RED,
+            fc->glyph->bitmap.width,
+            fc->glyph->bitmap.rows,
+            0,
+            GL_RED,
+            GL_UNSIGNED_BYTE,
+            fc->glyph->bitmap.buffer
+        );
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    
+        Character character = {
+            texture,
+            glm::ivec2(fc->glyph->bitmap.width, fc->glyph->bitmap.rows),
+            glm::ivec2(fc->glyph->bitmap_left, fc->glyph->bitmap_top),
+            fc->glyph->advance.x
+        };
+
+        characters.insert(std::pair<char, Character>(i, character));
+    }
+
+    FT_Done_Face(fc);
+    FT_Done_FreeType(ft);
+
+    Shader textShader(
+        "shaders/text.vert",
+        "shaders/text.frag",
+        std::vector<const char*>{"a_Vertex"}
+    );
 
     while (!glfwWindowShouldClose(window)) {
         process_input(window);
@@ -323,78 +369,15 @@ int main(int, char**) {
         delta = current_frame - last_frame;
         last_frame = current_frame;
         
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glm::mat4 projection = glm::ortho(0.0f, 800.0f, 0.0f, 800.0f);
 
-        glm::mat4 projection = glm::perspective(glm::radians(camera.zoom), 800.0f / 600.0f, 0.1f, 100.0f);
-        glm::mat4 view       = camera.getViewMatrix();
+        textShader.setMat4("projection", projection);
 
-        gBufferShader.use();
-        gBufferShader.setMat4("projection", projection);
-        gBufferShader.setMat4("view", view);
-
-        for (unsigned int i = 0; i < objectPositions.size(); i++) {
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, objectPositions[i]);
-            model = glm::scale(model, glm::vec3(0.5f));
-            gBufferShader.setMat4("model", model);
-            gBufferShader.setMat4("inverseModel", glm::inverse(model));
-            backpack.draw(gBufferShader);
-        }
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
-        screenShader.use();
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, gPosition);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, gNormal);
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, gAlbedoSpec);
-
-        for (unsigned int i = 0; i < lightPositions.size(); i++) {
-            screenShader.setVec3("lights[" + std::to_string(i) + "].position", lightPositions[i]);
-            screenShader.setVec3("lights[" + std::to_string(i) + "].color", lightColors[i]);
-
-            const float constant = 1.0f;
-            const float linear = 0.7f;
-            const float quadratic = 1.8f;
-            screenShader.setFloat("lights[" + std::to_string(i) + "].linear", linear);
-            screenShader.setFloat("lights[" + std::to_string(i) + "].quadratic", quadratic);
-        
-            const float maxBrihtness = std::fmaxf(std::fmaxf(lightColors[i].r, lightColors[i].g), lightColors[i].b);
-            const float radius = (-linear + std::sqrt(linear * linear - 4 * quadratic * (constant - (256.0f / 5.0f) * maxBrihtness))) / (2.0f * quadratic);
-            screenShader.setFloat("lights[" + std::to_string(i) + "].radius", radius);
-        }
-
-        screenShader.setVec3("viewPos", camera.position);
-
-        renderQuad();
-
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-
-        glBlitFramebuffer(0, 0, 800, 600, 0, 0, 800, 600, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-        
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-        lightBoxShader.use();
-        lightBoxShader.setMat4("projection", projection);
-        lightBoxShader.setMat4("view", view);
-
-        for (unsigned int i = 0; i < lightPositions.size(); i++) {
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, lightPositions[i]);
-            model = glm::scale(model, glm::vec3(0.1f));
-            lightBoxShader.setMat4("model", model);
-            lightBoxShader.setVec3("lightColor", lightColors[i]);
-            renderCube();
-        }
+        renderText(textShader, "This is sample text", 25.0f, 25.0f, 1.0f, glm::vec3(0.5, 0.8f, 0.2f));
+        renderText(textShader, "(C) LearnOpenGL.com", 560.0f, 570.0f, 0.5f, glm::vec3(0.3, 0.7f, 0.9f));
 
         glfwSwapBuffers(window);
         glfwPollEvents();

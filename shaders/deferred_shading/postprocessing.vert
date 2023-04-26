@@ -1,7 +1,7 @@
 #version 140
 
-attribute vec3 aPosition;
-attribute vec2 aTexCoords;
+in vec3 aPosition;
+in vec2 aTexCoords;
 
 out vec2 TexCoords;
 
